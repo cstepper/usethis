@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Add an RMarkdown Template — use_rmarkdown_template • usethis</title>
+<title>Copy a file from any GitHub repo into the current project — use_github_file • usethis</title>
 
 <!-- favicons -->
 <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
@@ -49,14 +49,11 @@
 
 
 
-<meta property="og:title" content="Add an RMarkdown Template — use_rmarkdown_template" />
-<meta property="og:description" content="Adds files and directories necessary to add a custom rmarkdown template to
-RStudio. It creates:
-inst/rmarkdown/templates/{{template_dir}}. Main directory.
-skeleton/skeleton.Rmd. Your template Rmd file.
-template.yml with basic information filled in.
-
-" />
+<meta property="og:title" content="Copy a file from any GitHub repo into the current project — use_github_file" />
+<meta property="og:description" content="Gets the content of a file from GitHub, from any repo the user can read, and
+writes it into the active project. This function wraps an endpoint of the
+GitHub API which supports specifying a target reference (i.e. branch, tag,
+or commit) and which follows symlinks." />
 <meta property="og:image" content="https://usethis.r-lib.org/logo.png" />
 <meta name="twitter:card" content="summary" />
 
@@ -185,56 +182,97 @@ template.yml with basic information filled in.
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Add an RMarkdown Template</h1>
-    <small class="dont-index">Source: <a href='https://github.com/r-lib/usethis/blob/master/R/rmarkdown.R'><code>R/rmarkdown.R</code></a></small>
-    <div class="hidden name"><code>use_rmarkdown_template.Rd</code></div>
+    <h1>Copy a file from any GitHub repo into the current project</h1>
+    <small class="dont-index">Source: <a href='https://github.com/r-lib/usethis/blob/master/R/use_github_file.R'><code>R/use_github_file.R</code></a></small>
+    <div class="hidden name"><code>use_github_file.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Adds files and directories necessary to add a custom rmarkdown template to
-RStudio. It creates:</p><ul>
-<li><p><code>inst/rmarkdown/templates/{{template_dir}}</code>. Main directory.</p></li>
-<li><p><code>skeleton/skeleton.Rmd</code>. Your template Rmd file.</p></li>
-<li><p><code>template.yml</code> with basic information filled in.</p></li>
-</ul>
-
+    <p>Gets the content of a file from GitHub, from any repo the user can read, and
+writes it into the active project. This function wraps an endpoint of the
+GitHub API which supports specifying a target reference (i.e. branch, tag,
+or commit) and which follows symlinks.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>use_rmarkdown_template</span><span class='op'>(</span>
-  template_name <span class='op'>=</span> <span class='st'>"Template Name"</span>,
-  template_dir <span class='op'>=</span> <span class='cn'>NULL</span>,
-  template_description <span class='op'>=</span> <span class='st'>"A description of the template"</span>,
-  template_create_dir <span class='op'>=</span> <span class='cn'>FALSE</span>
+    <pre class="usage"><span class='fu'>use_github_file</span><span class='op'>(</span>
+  <span class='va'>repo_spec</span>,
+  path <span class='op'>=</span> <span class='cn'>NULL</span>,
+  save_as <span class='op'>=</span> <span class='cn'>NULL</span>,
+  ref <span class='op'>=</span> <span class='cn'>NULL</span>,
+  ignore <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  open <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  host <span class='op'>=</span> <span class='cn'>NULL</span>
 <span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>template_name</th>
-      <td><p>The name as printed in the template menu.</p></td>
+      <th>repo_spec</th>
+      <td><p>A string identifying the GitHub repo or, alternatively, a
+GitHub file URL. Acceptable forms:</p><ul>
+<li><p>Plain <code>OWNER/REPO</code> spec</p></li>
+<li><p>A blob URL, such as <code>"https://github.com/OWNER/REPO/blob/REF/path/to/some/file"</code></p></li>
+<li><p>A raw URL, such as <code>"https://raw.githubusercontent.com/OWNER/REPO/REF/path/to/some/file"</code></p></li>
+</ul>
+
+<p>In the case of a URL, the <code>path</code>, <code>ref</code>, and <code>host</code> are extracted from it, in
+addition to the <code>repo_spec</code>.</p></td>
     </tr>
     <tr>
-      <th>template_dir</th>
-      <td><p>Name of the directory the template will live in within
-<code>inst/rmarkdown/templates</code>. If none is provided by the user, it will be
-created from <code>template_name</code>.</p></td>
+      <th>path</th>
+      <td><p>Path of file to copy, relative to the GitHub repo it lives in.
+This is extracted from <code>repo_spec</code> when user provides a URL.</p></td>
     </tr>
     <tr>
-      <th>template_description</th>
-      <td><p>Sets the value of <code>description</code> in
-<code>template.yml</code>.</p></td>
+      <th>save_as</th>
+      <td><p>Path of file to create, relative to root of active project.
+Defaults to the last part of <code>path</code>, in the sense of <code><a href='https://rdrr.io/r/base/basename.html'>basename(path)</a></code> or
+<code><a href='http://fs.r-lib.org/reference/path_file.html'>fs::path_file(path)</a></code>.</p></td>
     </tr>
     <tr>
-      <th>template_create_dir</th>
-      <td><p>Sets the value of <code>create_dir</code> in <code>template.yml</code>.</p></td>
+      <th>ref</th>
+      <td><p>The name of a branch, tag, or commit. By default, the file at
+<code>path</code> will by copied from its current state in the repo's default branch.
+This is extracted from <code>repo_spec</code> when user provides a URL.</p></td>
+    </tr>
+    <tr>
+      <th>ignore</th>
+      <td><p>Should the newly created file be added to <code>.Rbuildignore</code>?</p></td>
+    </tr>
+    <tr>
+      <th>open</th>
+      <td><p>Open the newly created file for editing? Happens in RStudio, if
+applicable, or via <code><a href='https://rdrr.io/r/utils/file.edit.html'>utils::file.edit()</a></code> otherwise.</p></td>
+    </tr>
+    <tr>
+      <th>host</th>
+      <td><p>GitHub host to target, passed to the <code>.api_url</code> argument of
+<code><a href='https://gh.r-lib.org/reference/gh.html'>gh::gh()</a></code>. If unspecified, gh defaults to "https://api.github.com",
+although gh's default can be customised by setting the GITHUB_API_URL
+environment variable.</p>
+<p>For a hypothetical GitHub Enterprise instance, either
+"https://github.acme.com/api/v3" or "https://github.acme.com" is
+acceptable.</p></td>
     </tr>
     </table>
 
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>A logical indicator of whether a file was written, invisibly.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
-<span class='fu'>use_rmarkdown_template</span><span class='op'>(</span><span class='op'>)</span>
+<span class='fu'>use_github_file</span><span class='op'>(</span>
+  <span class='st'>"https://github.com/r-lib/actions/blob/v1/examples/check-standard.yaml"</span>
+<span class='op'>)</span>
+
+<span class='fu'>use_github_file</span><span class='op'>(</span>
+  <span class='st'>"r-lib/actions"</span>,
+  path <span class='op'>=</span> <span class='st'>"examples/check-standard.yaml"</span>,
+  ref <span class='op'>=</span> <span class='st'>"v1"</span>,
+  save_as <span class='op'>=</span> <span class='st'>".github/workflows/R-CMD-check.yaml"</span>
+<span class='op'>)</span>
 <span class='op'>}</span>
 </div></pre>
   </div>
